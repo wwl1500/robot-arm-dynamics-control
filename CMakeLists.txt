@@ -91,3 +91,27 @@ target_link_libraries(controller_demo
     PRIVATE
         arm_controller
 )
+
+add_library(arm_control_runner
+    src/arm_control_runner.cpp
+)
+
+target_include_directories(arm_control_runner
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(arm_control_runner
+    PUBLIC
+        Eigen3::Eigen
+        arm_controller
+)
+
+add_executable(control_runner_demo
+    src/control_runner_demo.cpp
+)
+
+target_link_libraries(control_runner_demo
+    PRIVATE
+        arm_control_runner
+)

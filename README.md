@@ -4,9 +4,9 @@
 
 ## 当前阶段
 
-第三步：2-DOF 平面机械臂运动学 + Pinocchio 刚体动力学 + 最小控制器接口。
+第四步：2-DOF 平面机械臂运动学 + Pinocchio 刚体动力学 + 最小控制器接口 + 纯 C++ 控制运行封装层。
 
-当前已实现 2-DOF 平面机械臂的正运动学、雅可比矩阵、质量矩阵、非线性项、重力项、逆动力学和纯 C++ 控制器接口。尚未实现 ROS2-control 插件、仿真、轨迹规划、数据记录或绘图。
+当前已实现 2-DOF 平面机械臂的正运动学、雅可比矩阵、质量矩阵、非线性项、重力项、逆动力学、纯 C++ 控制器接口和控制运行封装层。尚未实现 ROS2-control 插件、仿真、轨迹规划、数据记录或绘图。
 
 ## 模型
 
@@ -60,20 +60,33 @@ Pinocchio 动力学模块提供：
 
 控制器只复用 `ArmKinematics` 和 `ArmDynamics` 的公开接口，不暴露 Pinocchio 内部模型。
 
+## 控制运行封装层
+
+`ArmControlRunner` 提供接近控制周期的统一执行入口：
+
+- 根据 `ArmControlMode` 调度关节空间 PD + 重力补偿、任务空间雅可比转置控制或计算力矩控制。
+- 通过 `ArmControlCommand` 统一承载控制模式、目标和增益。
+- 通过 `TorqueLimits` 对输出力矩逐关节限幅。
+
+该封装层只依赖 `ArmController` 的公开接口，不直接依赖 Pinocchio，也不绑定 ROS2。
+
 ## 项目结构
 
 ```text
 .
 ├── CMakeLists.txt
 ├── include/
+│   ├── arm_control_runner.hpp
 │   ├── arm_controller.hpp
 │   ├── arm_dynamics.hpp
 │   ├── arm_kinematics.hpp
 │   └── common_types.hpp
 └── src/
+    ├── arm_control_runner.cpp
     ├── arm_controller.cpp
     ├── arm_dynamics.cpp
     ├── arm_kinematics.cpp
+    ├── control_runner_demo.cpp
     ├── controller_demo.cpp
     ├── dynamics_demo.cpp
     └── main.cpp
@@ -89,6 +102,7 @@ cmake --build build
 ./build/kinematics_demo
 ./build/dynamics_demo
 ./build/controller_demo
+./build/control_runner_demo
 ```
 
 ## 验证内容
@@ -132,4 +146,17 @@ All dynamics checks passed.
 
 ```text
 All controller checks passed.
+```
+
+`control_runner_demo` 会检查：
+
+- 三种控制模式调度是否与已有控制器接口等价
+- 对称力矩限幅上下界是否正确
+- 输出力矩是否逐关节限幅
+- 非法力矩限幅配置是否被拒绝
+
+全部通过时会输出：
+
+```text
+All control runner checks passed.
 ```
