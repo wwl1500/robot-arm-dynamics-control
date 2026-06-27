@@ -4,9 +4,9 @@
 
 ## 当前阶段
 
-第二步：2-DOF 平面机械臂运动学 + Pinocchio 刚体动力学。
+第三步：2-DOF 平面机械臂运动学 + Pinocchio 刚体动力学 + 最小控制器接口。
 
-当前已实现 2-DOF 平面机械臂的正运动学、雅可比矩阵、质量矩阵、非线性项、重力项和逆动力学。尚未实现控制器、ROS2-control 插件、仿真、轨迹规划、数据记录或绘图。
+当前已实现 2-DOF 平面机械臂的正运动学、雅可比矩阵、质量矩阵、非线性项、重力项、逆动力学和纯 C++ 控制器接口。尚未实现 ROS2-control 插件、仿真、轨迹规划、数据记录或绘图。
 
 ## 模型
 
@@ -50,18 +50,31 @@ Pinocchio 动力学模块提供：
 - `g(q)`：重力项
 - `tau = M(q)a + h(q, v)`：逆动力学力矩
 
+## 控制器接口
+
+控制器模块提供三个最小力矩控制接口：
+
+- 关节空间 PD + 重力补偿：`tau = Kp(q_des - q) + Kd(v_des - v) + g(q)`
+- 任务空间雅可比转置控制：`tau = J(q)^T * f + g(q)`，其中 `f = Kp(x_des - x) + Kd(xdot_des - xdot)`，`xdot = J(q)v`
+- 计算力矩控制：`tau = inverseDynamics(q, v, qdd_cmd)`，其中 `qdd_cmd = qdd_des + Kd(v_des - v) + Kp(q_des - q)`
+
+控制器只复用 `ArmKinematics` 和 `ArmDynamics` 的公开接口，不暴露 Pinocchio 内部模型。
+
 ## 项目结构
 
 ```text
 .
 ├── CMakeLists.txt
 ├── include/
+│   ├── arm_controller.hpp
 │   ├── arm_dynamics.hpp
 │   ├── arm_kinematics.hpp
 │   └── common_types.hpp
 └── src/
+    ├── arm_controller.cpp
     ├── arm_dynamics.cpp
     ├── arm_kinematics.cpp
+    ├── controller_demo.cpp
     ├── dynamics_demo.cpp
     └── main.cpp
 ```
@@ -75,6 +88,7 @@ cmake -S . -B build
 cmake --build build
 ./build/kinematics_demo
 ./build/dynamics_demo
+./build/controller_demo
 ```
 
 ## 验证内容
@@ -104,4 +118,18 @@ All kinematics checks passed.
 
 ```text
 All dynamics checks passed.
+```
+
+`controller_demo` 会检查：
+
+- 关节空间 PD + 重力补偿控制律
+- 零关节误差时输出重力补偿
+- 任务空间雅可比转置控制律
+- 计算力矩控制律
+- 零跟踪误差、零期望加速度时计算力矩结果与动力学非线性项一致
+
+全部通过时会输出：
+
+```text
+All controller checks passed.
 ```

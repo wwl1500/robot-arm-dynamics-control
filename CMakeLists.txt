@@ -66,3 +66,28 @@ target_link_libraries(dynamics_demo
     PRIVATE
         arm_dynamics
 )
+
+add_library(arm_controller
+    src/arm_controller.cpp
+)
+
+target_include_directories(arm_controller
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(arm_controller
+    PUBLIC
+        Eigen3::Eigen
+        arm_kinematics
+        arm_dynamics
+)
+
+add_executable(controller_demo
+    src/controller_demo.cpp
+)
+
+target_link_libraries(controller_demo
+    PRIVATE
+        arm_controller
+)
