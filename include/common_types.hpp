@@ -5,3 +5,4 @@
 using JointVector2d = Eigen::Vector2d;
 using TaskVector2d = Eigen::Vector2d;
 using Jacobian2d = Eigen::Matrix2d;
+using JointMatrix2d = Eigen::Matrix2d;
